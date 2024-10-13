@@ -5,7 +5,7 @@ import 'package:retrofit/retrofit.dart';
 
 part 'api_data.g.dart';
 
-@RestApi(baseUrl: 'http://localhost:5000/api')
+@RestApi(baseUrl: 'https://api-contactos-production.up.railway.app/api')
 abstract class ApiClient {
   factory ApiClient(Dio dio, {String? baseUrl}) = _ApiClient;
 

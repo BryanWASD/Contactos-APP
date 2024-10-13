@@ -14,7 +14,7 @@ class _ApiClient implements ApiClient {
     this.baseUrl,
     this.errorLogger,
   }) {
-    baseUrl ??= 'http://localhost:5000/api';
+    baseUrl ??= 'https://api-contactos-production.up.railway.app/api';
   }
 
   final Dio _dio;

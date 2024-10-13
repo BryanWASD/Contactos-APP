@@ -22633,7 +22633,7 @@ _.b=b
 _.c=c
 _.d=d},
 abT(a){var s=new A.abS(a)
-s.b="http://localhost:5000/api"
+s.b="https://api-contactos-production.up.railway.app/api"
 return s},
 abS:function abS(a){this.a=a
 this.b=null},
