@@ -16,6 +16,7 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   late SyncService syncService;
+  String searchQuery = ''; // Para manejar el texto de búsqueda
 
   @override
   void initState() {
@@ -44,24 +45,46 @@ class _MyHomePageState extends State<MyHomePage> {
             appBar: AppBar(
               title: const Text('Contactos'),
               actions: [
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  child: ElevatedButton.icon(
-                    style: TextButton.styleFrom(
-                      shape: const BeveledRectangleBorder(
-                        borderRadius: BorderRadius.all(
-                          Radius.circular(2),
+                Row(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 5),
+                      child: ElevatedButton.icon(
+                        style: TextButton.styleFrom(
+                          shape: const BeveledRectangleBorder(
+                            borderRadius: BorderRadius.all(
+                              Radius.circular(2),
+                            ),
+                          ),
+                          elevation: 0,
                         ),
+                        onPressed: () async {
+                          CreateContactDialog().show(context: context);
+                        },
+                        label: const Text('Agregar'),
+                        icon: const Icon(Icons.add),
                       ),
-                      elevation: 0,
                     ),
-                    onPressed: () async {
-                      CreateContactDialog().show(context: context);
-                    },
-                    label: const Text('Agregar contacto'),
-                    icon: const Icon(Icons.add),
-                  ),
-                )
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 5),
+                      child: ElevatedButton.icon(
+                        style: TextButton.styleFrom(
+                          shape: const BeveledRectangleBorder(
+                            borderRadius: BorderRadius.all(
+                              Radius.circular(2),
+                            ),
+                          ),
+                          elevation: 0,
+                        ),
+                        onPressed: () async {
+                          _showSearchDialog(context);
+                        },
+                        label: const Text('Buscar'),
+                        icon: const Icon(Icons.search),
+                      ),
+                    ),
+                  ],
+                ),
               ],
             ),
             body: SafeArea(
@@ -73,12 +96,17 @@ class _MyHomePageState extends State<MyHomePage> {
                     );
                   }
                   if (state is GetContactsSuccess) {
-                    final contacts = state.contacts;
+                    final contacts = state.contacts?.where((contact) {
+                      return contact.nombre
+                          .toLowerCase()
+                          .contains(searchQuery.toLowerCase());
+                    }).toList();
+
                     if (contacts == null || contacts.isEmpty) {
                       return const Center(child: Text('No hay datos'));
                     }
 
-                    // Ordenar los contactos alfabéticamente y agruparlos por la inicial
+                    // Ordenar y agrupar contactos
                     final Map<String, List<dynamic>> groupedContacts = {};
                     for (var contact in contacts) {
                       final initial = contact.nombre[0].toUpperCase();
@@ -156,6 +184,45 @@ class _MyHomePageState extends State<MyHomePage> {
           );
         },
       ),
+    );
+  }
+
+  void _showSearchDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Buscar Contacto'),
+          content: TextField(
+            autofocus: true,
+            decoration: const InputDecoration(
+              hintText: 'Ingrese el nombre...',
+            ),
+            onChanged: (value) {
+              setState(() {
+                searchQuery = value;
+              });
+            },
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: const Text('Cerrar'),
+            ),
+            TextButton(
+              onPressed: () {
+                setState(() {
+                  searchQuery = ''; // Restablecer la búsqueda
+                });
+                Navigator.of(context).pop(); // Cerrar el diálogo
+              },
+              child: const Text('Limpiar'),
+            ),
+          ],
+        );
+      },
     );
   }
 }
