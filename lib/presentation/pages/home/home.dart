@@ -1,22 +1,41 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutterpwa/data/local/db_helper.dart';
 import 'package:flutterpwa/presentation/pages/home/cubit/create_contact_cubit.dart';
 import 'package:flutterpwa/presentation/pages/home/cubit/get_contacts_cubit.dart';
 import 'package:flutterpwa/presentation/pages/home/widgets/confirm_delete_dialog.dart';
 import 'package:flutterpwa/presentation/pages/home/widgets/create_contact_dialog.dart';
+import 'package:flutterpwa/services/sync_service.dart';
 
-class MyHomePage extends StatelessWidget {
+class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key});
 
   @override
+  State<MyHomePage> createState() => _MyHomePageState();
+}
+
+class _MyHomePageState extends State<MyHomePage> {
+  late SyncService syncService;
+
+  @override
+  void initState() {
+    super.initState();
+    final createContactCubit = context.read<CreateContactCubit>();
+    syncService = SyncService(createContactCubit);
+    syncService.listenForConnectivity();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final dbHelper = LocalDatabaseHelper();
+
     return MultiBlocProvider(
       providers: [
         BlocProvider(
-          create: (context) => GetContactsCubit()..getContacts(),
+          create: (context) => GetContactsCubit(dbHelper)..getContacts(),
         ),
         BlocProvider(
-          create: (context) => CreateContactCubit(),
+          create: (context) => CreateContactCubit(dbHelper),
         )
       ],
       child: Builder(
@@ -55,47 +74,72 @@ class MyHomePage extends StatelessWidget {
                   }
                   if (state is GetContactsSuccess) {
                     final contacts = state.contacts;
+                    if (contacts == null || contacts.isEmpty) {
+                      return const Center(child: Text('No hay datos'));
+                    }
+
+                    // Ordenar los contactos alfabéticamente y agruparlos por la inicial
+                    final Map<String, List<dynamic>> groupedContacts = {};
+                    for (var contact in contacts) {
+                      final initial = contact.nombre[0].toUpperCase();
+                      groupedContacts
+                          .putIfAbsent(initial, () => [])
+                          .add(contact);
+                    }
+
+                    final sortedKeys = groupedContacts.keys.toList()..sort();
+
                     return ListView.builder(
                       padding: const EdgeInsets.all(10),
-                      itemCount: contacts!.length,
+                      itemCount: sortedKeys.length,
                       itemBuilder: (context, index) {
-                        final contact = contacts[index];
-                        return ListTile(
-                          leading: CircleAvatar(
-                            radius: 20,
-                            child: Text(
-                              contact.nombre[0].toUpperCase(),
+                        final initial = sortedKeys[index];
+                        final contactsByInitial = groupedContacts[initial]!;
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              initial,
+                              style: const TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
-                          ),
-                          title: Text(contact.nombre),
-                          subtitle:
-                              Text("${contact.telefono}\n${contact.email}"),
-                          trailing: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              IconButton(
-                                onPressed: () {
-                                  CreateContactDialog()
-                                      .show(context: context, contact: contact);
-                                },
-                                icon: const Icon(Icons.edit),
-                              ),
-                              IconButton(
-                                onPressed: () {
-                                  ConfirmDeleteDialog()
-                                      .show(context: context, id: contact.id);
-                                },
-                                icon: const Icon(Icons.delete),
-                              ),
-                            ],
-                          ),
+                            ...contactsByInitial.map((contact) {
+                              return ListTile(
+                                leading: CircleAvatar(
+                                  radius: 20,
+                                  child: Text(
+                                    contact.nombre[0].toUpperCase(),
+                                  ),
+                                ),
+                                title: Text(contact.nombre),
+                                subtitle: Text(
+                                    "${contact.telefono}\n${contact.email}"),
+                                trailing: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    IconButton(
+                                      onPressed: () {
+                                        CreateContactDialog().show(
+                                            context: context, contact: contact);
+                                      },
+                                      icon: const Icon(Icons.edit),
+                                    ),
+                                    IconButton(
+                                      onPressed: () {
+                                        ConfirmDeleteDialog().show(
+                                            context: context, id: contact.id);
+                                      },
+                                      icon: const Icon(Icons.delete),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            }),
+                          ],
                         );
                       },
-                    );
-                  }
-                  if (state is GetContactsEmpty) {
-                    return const Center(
-                      child: Text('No hay datos'),
                     );
                   }
                   if (state is GetContactsError) {
@@ -104,7 +148,7 @@ class MyHomePage extends StatelessWidget {
                     );
                   }
                   return const Center(
-                    child: Text('No hay datos'),
+                    child: CircularProgressIndicator(),
                   );
                 },
               ),
