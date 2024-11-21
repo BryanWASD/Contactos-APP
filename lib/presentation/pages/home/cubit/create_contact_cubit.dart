@@ -6,6 +6,7 @@ import 'package:flutterpwa/data/dtos/request/create_contact_request_dto.dart';
 import 'package:flutterpwa/data/local/db_helper.dart';
 import 'package:flutterpwa/data/main/api_data.dart';
 import 'package:flutterpwa/data/models/contact_model.dart';
+import 'package:flutterpwa/services/notifications_servide.dart';
 import 'package:meta/meta.dart';
 
 part 'create_contact_state.dart';
@@ -37,14 +38,29 @@ class CreateContactCubit extends Cubit<CreateContactState> {
           telefono: telefono,
         );
         await dbHelper.insertContact(localContact);
+        notifyUserCreation(nombre);
         emit(CreateContactSuccess());
       } else {
         // Guardar contacto directamente en el servidor
         await client.createContact(contact);
+        notifyUserCreation(nombre);
         emit(CreateContactSuccess());
       }
     } catch (e) {
       emit(CreateContactError());
+    }
+  }
+
+  void notifyUserCreation(String userName) async {
+    bool hasPermission = await WebNotification.requestPermission();
+
+    if (hasPermission) {
+      WebNotification.showNotification(
+        'Usuario creado',
+        'El usuario $userName ha sido creado con éxito.',
+      );
+    } else {
+      print('El usuario no concedió permiso para notificaciones.');
     }
   }
 

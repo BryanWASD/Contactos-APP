@@ -24,6 +24,11 @@ class _MyHomePageState extends State<MyHomePage> {
     final createContactCubit = context.read<CreateContactCubit>();
     syncService = SyncService(createContactCubit);
     syncService.listenForConnectivity();
+    //added
+    // FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+    //   print("Mensaje en primer plano: ${message.notification?.title}");
+    // });
+    //added
   }
 
   @override

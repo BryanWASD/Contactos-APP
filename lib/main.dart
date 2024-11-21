@@ -11,13 +11,28 @@ import 'package:flutterpwa/services/sync_service.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:sqflite_common_ffi_web/sqflite_ffi_web.dart';
 
-
-void main() {
+void main() async {
   if (kIsWeb) {
     databaseFactory = databaseFactoryFfiWeb;
   } else {
     databaseFactory = databaseFactoryFfi;
   }
+  WidgetsFlutterBinding.ensureInitialized();
+  // await Firebase.initializeApp(
+  //   options: const FirebaseOptions(
+  //       apiKey: "AIzaSyDBkkhgbVh8xYDLpuuS2q1ivVF5AxJzF-I",
+  //       authDomain: "flutter-3c0eb.firebaseapp.com",
+  //       projectId: "flutter-3c0eb",
+  //       storageBucket: "flutter-3c0eb.firebasestorage.app",
+  //       messagingSenderId: "291649233099",
+  //       appId: "1:291649233099:web:51a9c362e35a836e013b4e",
+  //       measurementId: "G-B64YMB9D5Z"),
+  // ); // Inicializar Firebase
+  // //added
+  // await FirebaseMessaging.instance.requestPermission(); // Pedir permisos
+  // await FirebaseMessaging.instance
+  //     .subscribeToTopic("all"); // Suscribirse a un tópico
+  // //added
   runApp(const MyApp());
 }
 
